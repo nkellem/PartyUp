@@ -1,6 +1,8 @@
 //attributes for each individual user
 let user = '';
 let room = '';
+let isHost = false;
+let hostName = '';
 
 //sets up all of the client websocket events
 const joinRoom = (e) => {
@@ -17,8 +19,22 @@ const joinRoom = (e) => {
 	const socket = io.connect();
 	
 	socket.on('connect', () => {
-		socket.emit('join', {user});
+		socket.emit('join', {user, room});
 		alert('joined room');
+	});
+	
+	//only fires if this socket is the host
+  //initializes all of the host's websocket events
+  socket.on('hostConfirmation', data => {
+    isHost = true;
+    hostConfirmation(data);
+    //set up all our host methods
+    hostEvents(socket);
+  });
+	
+	socket.on('hostAcknowledge', data => {
+		console.log('hi');
+		alert(`${data.hostName} is the host`);
 	});
 };
 

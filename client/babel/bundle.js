@@ -1,3 +1,14 @@
+let queue = [];
+
+//once the host is confirmed, add to users object
+const hostConfirmation = data => {
+	alert(`you are the host`);
+};
+
+//
+const hostEvents = sock => {
+	const socket = sock;
+};
 //React Component for rendering the login form on the home page
 const RoomLoginComponent = props => {
 	return React.createElement(
@@ -44,6 +55,8 @@ const setup = () => {
 //attributes for each individual user
 let user = '';
 let room = '';
+let isHost = false;
+let hostName = '';
 
 //sets up all of the client websocket events
 const joinRoom = e => {
@@ -60,8 +73,22 @@ const joinRoom = e => {
 	const socket = io.connect();
 
 	socket.on('connect', () => {
-		socket.emit('join', { user });
+		socket.emit('join', { user, room });
 		alert('joined room');
+	});
+
+	//only fires if this socket is the host
+	//initializes all of the host's websocket events
+	socket.on('hostConfirmation', data => {
+		isHost = true;
+		hostConfirmation(data);
+		//set up all our host methods
+		hostEvents(socket);
+	});
+
+	socket.on('hostAcknowledge', data => {
+		console.log('hi');
+		alert(`${data.hostName} is the host`);
 	});
 };
 
