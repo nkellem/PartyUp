@@ -21,6 +21,7 @@ const joinRoom = (e) => {
 	socket.on('connect', () => {
 		socket.emit('join', {user, room});
 		alert('joined room');
+		createPartyUpPage();
 	});
 	
 	//only fires if this socket is the host

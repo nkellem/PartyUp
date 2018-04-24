@@ -1,0 +1,49 @@
+* {
+	margin: 0;
+	padding: 0;
+}
+
+html, body {
+	width: 100%;
+	height: 100%;
+}
+
+#mainContent {
+	text-align: center;
+}
+
+#controls {
+	margin: 0 auto;
+	display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#ytVideo {
+	display: inline-block;
+	width: 640px;
+	height: 360px;
+	border: 1px solid black;
+	text-align: center;
+	display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#ytVideo p {
+	
+}
+
+#queue {
+	border: 1px solid black;
+	width: 640px;
+	margin: 0 auto;
+}

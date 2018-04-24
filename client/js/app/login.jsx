@@ -1,3 +1,5 @@
+//SECTION - Components that build the web page
+
 //React Component for rendering the login form on the home page
 const RoomLoginComponent = props => {
 	return (
@@ -15,6 +17,8 @@ const RoomLoginComponent = props => {
 	);
 };
 
+//SECTION - Methods for calling the components and rendering the page
+
 //Renders the login form
 const createRoomLogin = () => {
 	ReactDOM.render(
@@ -23,6 +27,9 @@ const createRoomLogin = () => {
 	);
 };
 
+//SECTION - Events and other App logic
+
+//sets up events for the login page and renders the page
 const setup = () => {
 	createRoomLogin();
 };
