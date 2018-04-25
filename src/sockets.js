@@ -32,7 +32,7 @@ const designateHost = (sock) => {
       // grab the socket object from the overall socket list
       // based on the socket ids in the room
       const socketUser = io.sockets.connected[socketKeys[i]];
-			console.log(socketUser.name);
+      console.log(socketUser.name);
 
       // if this socket is the host and matches our room name
       if (socketUser.isHost) {
@@ -58,9 +58,19 @@ const onJoined = (sock) => {
   socket.on('join', (data) => {
     socket.join(data.room);
     socket.name = data.user;
-		socket.belongsTo = data.room;
+    socket.belongsTo = data.room;
     console.log(`User ${data.user} just joined the ${data.room}`);
-		designateHost(socket);
+    designateHost(socket);
+  });
+};
+
+// handle incoming queue requests from clients
+const onClientSendVideoId = (sock) => {
+  const socket = sock;
+
+  socket.on('clientSendVideoId', (data) => {
+    console.log('client sent video id');
+    socket.hostSocket.emit('clientSentVideoId', data);
   });
 };
 
@@ -72,6 +82,7 @@ const setupSockets = (ioServer) => {
     const socket = sock;
 
     onJoined(socket);
+    onClientSendVideoId(socket);
   });
 };
 

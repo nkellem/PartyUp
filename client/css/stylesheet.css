@@ -47,3 +47,7 @@ html, body {
 	width: 640px;
 	margin: 0 auto;
 }
+
+.addVideo {
+	display: inline-block;
+}

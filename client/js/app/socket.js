@@ -3,6 +3,7 @@ let user = '';
 let room = '';
 let isHost = false;
 let hostName = '';
+let socket;
 
 //sets up all of the client websocket events
 const joinRoom = (e) => {
@@ -16,7 +17,7 @@ const joinRoom = (e) => {
 		return false;
 	}
 	
-	const socket = io.connect();
+	socket = io.connect();
 	
 	socket.on('connect', () => {
 		socket.emit('join', {user, room});
@@ -28,6 +29,7 @@ const joinRoom = (e) => {
   //initializes all of the host's websocket events
   socket.on('hostConfirmation', data => {
     isHost = true;
+		console.log(isHost);
     hostConfirmation(data);
     //set up all our host methods
     hostEvents(socket);

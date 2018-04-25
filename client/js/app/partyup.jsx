@@ -37,7 +37,7 @@ const QueueComponent = props => {
 //React component for building the search button
 const SearchButtonComponent = props => {
 	return (
-		<button>Search For A Song</button>
+		<button onClick={createSearchVideoPage}>Search For A Song</button>
 	);
 };
 
