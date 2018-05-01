@@ -38,7 +38,7 @@ const SearchVideoNavComponent = props => {
 //React componenet for building an result list item
 const ResultsListItemComponent = props => {
 	return (
-		<li className="resultName" value={props.video.id.videoId} onClick={addSongFromSearch}>
+		<li className="resultName" value={props.video.id.videoId} thumbnail={props.video.snippet.thumbnails.default.url} onClick={addSongFromSearch}>
 			<img src={props.video.snippet.thumbnails.default.url} alt={props.video.snippet.title} />
 			<p>{props.video.snippet.title}</p>
 		</li>
@@ -77,9 +77,12 @@ const SearchVideoPageComponent = props => {
 const createSearchVideoPage = e => {
 	e.preventDefault();
 	
+	const searchPage = document.querySelector('#search');
+	searchPage.style.display = 'block';
+	
 	ReactDOM.render(
 		<SearchVideoPageComponent />,
-		document.querySelector('#mainContent')
+		searchPage
 	);
 };
 
@@ -87,7 +90,7 @@ const createSearchVideoPage = e => {
 const handleNavHomeClick = e => {
 	e.preventDefault();
 	
-	createPartyUpPage();
+	document.querySelector('#search').style.display = 'none';
 };
 
 //handles the JSON response from the YouTube API
@@ -115,13 +118,13 @@ const handleSongSearch = e => {
 };
 
 //method for adding a song to the queue
-const addSongToQueue = videoId => {
+const addSongToQueue = (videoId, thumbnail) => {
 	console.log(videoId);
 	
 	if (!isHost) {
-		socket.emit('clientSendVideoId', {videoId});
+		socket.emit('clientSendVideoId', {videoId, thumbnail});
 	} else {
-		addVideoToQueue(videoId);
+		addVideoToQueue(videoId, thumbnail);
 	}
 };
 
@@ -133,7 +136,8 @@ const addSongFromSearch = e => {
 		element = e.target.parentNode;
 	}
 	
-	videoId = element.getAttribute('value');
+	const videoId = element.getAttribute('value');
+	const thumbnail = element.getAttribute('thumbnail');
 	
-	addSongToQueue(videoId);
+	addSongToQueue(videoId, thumbnail);
 };

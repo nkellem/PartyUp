@@ -12,6 +12,16 @@ html, body {
 	text-align: center;
 }
 
+#search {
+	text-align: center;
+	display: none;
+	position: fixed;
+	width: 100%;
+  height: 100%;
+  top: 0;
+  background-color: white;
+}
+
 #controls {
 	margin: 0 auto;
 	display: -webkit-box;
