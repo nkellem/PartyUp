@@ -12,7 +12,7 @@ const confirmHost = (sock) => {
 };
 
 // Set up socketio events
-const designateHost = (sock) => {
+const designateHost = (sock, data) => {
   const socket = sock;
 
   const socketRoom = io.sockets.adapter.rooms[socket.belongsTo];
@@ -36,7 +36,12 @@ const designateHost = (sock) => {
         socket.hostSocket = socketUser;
         socket.emit('hostAcknowledge');
         hostFound = true; // flag we did find a host (in case host left)
-        socket.hostSocket.emit('userJoined', { socketId: socket.id });
+        if (data.password) {
+          socket.hostSocket.emit('checkPassword', { userPass: data.password, socketId: socket.id });
+        } else {
+          socket.emit('userJoined');
+          socket.hostSocket.emit('userJoined', { socketId: socket.id });
+        }
         break; // stop searching for a host
       }
     }
@@ -47,6 +52,26 @@ const designateHost = (sock) => {
   }
 };
 
+// acknowledges when a user joins if their password matches
+const onPasswordMatches = (sock) => {
+  const socket = sock;
+
+  socket.on('passwordMatches', (data) => {
+    socket.hostSocket.to(data.socketId).emit('userJoined');
+    socket.hostSocket.emit('userJoined', { socketId: data.socketId });
+  });
+};
+
+// disconnects a user if they dont have the right password
+const onDisconnectUser = (sock) => {
+  const socket = sock;
+
+  socket.on('disconnectUser', (data) => {
+    socket.hostSocket.to(data.socketId).emit('wrongPassword', { message: "Password doesn't match the host's" });
+    io.sockets.sockets[data.socketId].disconnect();
+  });
+};
+
 // assign the user to a room
 const onJoined = (sock) => {
   const socket = sock;
@@ -54,7 +79,7 @@ const onJoined = (sock) => {
   socket.on('join', (data) => {
     socket.join(data.room);
     socket.belongsTo = data.room;
-    designateHost(socket);
+    designateHost(socket, data);
   });
 };
 
@@ -63,7 +88,6 @@ const onClientSendVideoId = (sock) => {
   const socket = sock;
 
   socket.on('clientSendVideoId', (data) => {
-    console.log('client sent video id');
     socket.hostSocket.emit('clientSentVideoId', data);
   });
 };
@@ -73,7 +97,6 @@ const onSendQueueToClients = (sock) => {
   const socket = sock;
 
   socket.on('sendQueueToClients', (data) => {
-    console.log('queue received and sent');
     socket.hostSocket.broadcast.emit('hostSentQueue', data);
   });
 };
@@ -92,7 +115,6 @@ const onClientHitRestart = (sock) => {
   const socket = sock;
 
   socket.on('clientHitRestart', () => {
-    console.log('client hit restart');
     socket.hostSocket.emit('clientHitRestart');
   });
 };
@@ -102,7 +124,6 @@ const onSendCurrentlyPlaying = (sock) => {
   const socket = sock;
 
   socket.on('sendCurrentlyPlaying', (data) => {
-    console.log('currently playing updated');
     socket.hostSocket.broadcast.emit('sendCurrentlyPlaying', data);
   });
 };
@@ -112,7 +133,6 @@ const onSendUserQueue = (sock) => {
   const socket = sock;
 
   socket.on('sendUserQueue', (data) => {
-    console.log('send user queue');
     const dataToSend = {
       queue: data.queue,
       joined: true,
@@ -130,6 +150,8 @@ const setupSockets = (ioServer) => {
   io.on('connection', (sock) => {
     const socket = sock;
 
+    onPasswordMatches(socket);
+    onDisconnectUser(socket);
     onJoined(socket);
     onClientSendVideoId(socket);
     onSendQueueToClients(socket);

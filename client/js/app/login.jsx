@@ -7,10 +7,13 @@ const RoomLoginComponent = props => {
 			<h1 className="title">Party Up</h1>
 			<h2 id="description">Create dynamic playlists with you and your friends!</h2>
 			<h2 id="formHeader">Create a room or enter an existing one</h2>
+			<div id="toast"></div>
 			<form id="roomLogin" name="roomLogin" action="/" onSubmit={joinRoom} method="POST">
-				<label htmlFor="roomName">Room Name</label>
+				<label htmlFor="roomName">*Room Name: </label>
 				<input id="roomName" type="text" name="roomName" placeholder="Room Name" />
-				<input className="submitForm" type="submit" value="Sign In" />
+				<label htmlFor="password">Room Password: </label>
+				<input id="password" type="text" name="password" placeholder="Room Password" />
+				<input className="submitForm button" type="submit" value="Enter" />
 			</form>
 		</div>
 	);

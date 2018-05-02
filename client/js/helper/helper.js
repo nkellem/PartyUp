@@ -29,3 +29,8 @@ const buildYouTubeAPIRequest = (search, success) => {
 	
 	sendAjax('GET', action, null, success);
 };
+
+//helper method for rendering toast messages on errors
+const handleError = message => {
+	createToastMessage(message);
+};

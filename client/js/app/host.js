@@ -3,7 +3,8 @@ let player;
 
 //once the host is confirmed, add to users object
 const hostConfirmation = data => {
-	alert(`you are the host`);
+	isHost = true;
+	createPartyUpPage();
 };
 
 //host method for sending the updated queue to each client
@@ -14,21 +15,28 @@ const sendQueueToClients = () => {
 //host method for sending the current song's image
 const sendCurrentlyPlaying = () => {
 	const currPlayImg = queue[0].currPlayImg;
-	console.log(currPlayImg);
 	const currPlayTitle = document.querySelector('#ytTitle').innerText;
 	
-	console.log('curr play update sent');
-	
 	socket.emit('sendCurrentlyPlaying', {currPlayImg, currPlayTitle});
+};
+
+//host method for checking if the user entered the correct password
+const onCheckPassword = sock => {
+	const socket = sock;
+	
+	socket.on('checkPassword', data => {
+		if (data.userPass === password) {
+			socket.emit('passwordMatches', {socketId: data.socketId});
+		} else {
+			socket.emit('disconnectUser', {socketId: data.socketId})
+		}
+	});
 };
 
 //host method for receiving queue song request from another user
 const onClientSentVideoId = sock => {
 	const socket = sock;
-	console.log('client sent video set up');
 	socket.on('clientSentVideoId', data => {
-		console.log('fired');
-		console.log(data.videoId);
 		addVideoToQueue(data.videoId, data.thumbnail, data.title, data.currPlayImg);
 	});
 };
@@ -38,7 +46,6 @@ const onClientHitNext = sock => {
 	const socket = sock;
 	
 	socket.on('clientHitNext', () => {
-		console.log('client hit next');
 		handleNextClick();
 	});
 };
@@ -48,7 +55,6 @@ const onClientHitRestart = sock => {
 	const socket = sock;
 	
 	socket.on('clientHitRestart', () => {
-		console.log('client hit restart');
 		handleRestartClick();
 	});
 };
@@ -58,25 +64,25 @@ const onUserJoined = sock => {
 	const socket = sock;
 	
 	socket.on('userJoined', data => {
-		console.log('user joined');
-		socket.emit('sendUserQueue', {socketId: data.socketId, queue, currPlayImg: queue[0].currPlayImg, title: queue[0].title});
+		if (queue.length > 0) {
+			socket.emit('sendUserQueue', {socketId: data.socketId, queue, currPlayImg: queue[0].currPlayImg, title: queue[0].title});
+		}
 	});
 };
 
 //sets up all of the host's socket events
 const hostEvents = sock => {
 	const socket = sock;
-	console.log('Host events set up');
 	onClientSentVideoId(socket);
 	onClientHitNext(socket);
 	onClientHitRestart(socket);
 	onUserJoined(socket);
+	onCheckPassword(socket);
 };
 
 //adds a selected video to the queue
 const addVideoToQueue = (videoId, thumbnail, title, currPlayImg) => {
 	queue.push( {videoId, thumbnail, title, currPlayImg} );
-	console.dir(queue);
 	
 	sendQueueToClients();
 	createQueueImages();
@@ -97,7 +103,6 @@ const playNextSongInQueue = () => {
 //handles what do when the video being played ends
 const onVideoEnd = e => {
 	if (e.data === 0 && queue.length > 1) {
-		console.log('event fired');
 		createVideoPlaceholder(playNextSongInQueue);
 	}
 };
@@ -133,6 +138,5 @@ const loadYoutubeVideo = videoId => {
 const playYouTubeVideo = () => {
 	const videoId = queue[0].videoId;
 	createSongTitle(queue[0].title);
-	console.log(`Video Id: ${videoId}`);
 	loadYoutubeVideo(videoId);
 };

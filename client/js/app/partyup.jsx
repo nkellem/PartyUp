@@ -1,5 +1,12 @@
 //SECTION - Components that build the web page
 
+//React component for rendering error messages
+const ToastMessageComponent = props => {
+	return (
+		<h2 id="error">{props.message}</h2>
+	);
+};
+
 //React comonent for building the upgrade account nav
 const UpgradeAccountNavComponent = props => {
 	return (
@@ -13,6 +20,13 @@ const UpgradeAccountNavComponent = props => {
 const PageTitleComponent = props => {
 	return (
 		<h1 id="title">Party Up</h1>
+	);
+};
+
+//React comonent for rendering the room name
+const QueueRoomNameComponent = props => {
+	return (
+		<h3 id="roomName">{`Room name: ${room}`}</h3>
 	);
 };
 
@@ -34,7 +48,7 @@ const CurrPlayImageComponent = props => {
 const VideoPlaceholderComponent = props => {
 	return (
 		<span id="ytVideo">
-			<p>Click me to add a song!</p>
+			<p>Click the button below to add a song!</p>
 		</span>
 	);
 };
@@ -61,7 +75,7 @@ const CurrentlyPlayingComponent = props => {
 const QueueComponent = props => {
 	return (
 		<div id="queue">
-			<p>Queue goes here</p>
+			<p>Your room's queue is displayed here</p>
 		</div>
 	);
 };
@@ -101,6 +115,7 @@ const PartyUpComponent = props => {
 		<div id="partyup">
 			<UpgradeAccountNavComponent />
 			<PageTitleComponent />
+			<QueueRoomNameComponent />
 			<CurrentlyPlayingComponent />
 			<QueueComponent />
 			<SearchButtonComponent />
@@ -109,6 +124,14 @@ const PartyUpComponent = props => {
 }
 
 //SECTION - Methods for calling the components and rendering the page
+
+//renders the toast message
+const createToastMessage = message => {
+	ReactDOM.render(
+		<ToastMessageComponent message={message} />,
+		document.querySelector('#toast')
+	);
+};
 
 //renders the app page
 const createPartyUpPage = () => {
@@ -121,7 +144,6 @@ const createPartyUpPage = () => {
 //renders the placeholder for the videos section
 //done so that iFrames can be reloaded on new videos
 const createVideoPlaceholder = (callback) => {
-	console.log("placeholder fired");
 	document.querySelector('#ytVideoArea').innerHTML = '<span id="ytVideo"></span>';
 	ReactDOM.render(
 		<VideoPlaceholderComponent />,
@@ -174,7 +196,6 @@ const handleRestartClick = e => {
 		}
 	} else {
 		socket.emit('clientHitRestart');
-		console.log('hit restart');
 	}
 };
 

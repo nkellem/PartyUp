@@ -9,7 +9,7 @@ const SearchVideoFormComponent = props => {
 				<form id="videoSearch" name="videoSearch" onSubmit={handleSongSearch}>
 					<label htmlFor="songName">Song Name: </label>
 					<input name="songName" id="songName" type="text" placeholder="Enter a song name here" />
-					<input id="submitVideoSearch" type="submit" value="Search" />
+					<input className="button" id="submitVideoSearch" type="submit" value="Search" />
 				</form>
 			</span>
 			<div id="searchResults">
@@ -34,6 +34,7 @@ const ResultsListItemComponent = props => {
 			<img src={props.video.snippet.thumbnails.medium.url} alt={props.video.snippet.title} />
 			<div className="songResultTitle">
 				<p>{props.video.snippet.title}</p>
+				<p className="confirmAdded">Added!</p>
 			</div>
 		</li>
 	);
@@ -41,6 +42,12 @@ const ResultsListItemComponent = props => {
 
 //React component for building the results list
 const ResultsListComponent = props => {
+	
+	const added = document.querySelectorAll('.confirmAdded');
+	added.forEach(msg => {
+		msg.style.display = 'none';
+	});
+	
 	let videos = [];
 	
 	Object.keys(props.videos).forEach(video => {
@@ -89,9 +96,7 @@ const handleNavHomeClick = e => {
 };
 
 //handles the JSON response from the YouTube API
-const processResults = data => {
-	console.dir(data.items);
-	
+const processResults = data => {	
 	ReactDOM.render(
 		<ResultsListComponent videos={data.items} />,
 		document.querySelector('#searchResults')
@@ -114,8 +119,6 @@ const handleSongSearch = e => {
 
 //method for adding a song to the queue
 const addSongToQueue = (videoId, thumbnail, title, currPlayImg) => {
-	console.log(videoId);
-	
 	if (!isHost) {
 		socket.emit('clientSendVideoId', {videoId, thumbnail, title, currPlayImg});
 	} else {
@@ -127,9 +130,15 @@ const addSongToQueue = (videoId, thumbnail, title, currPlayImg) => {
 const addSongFromSearch = e => {
 	let element = e.target;
 	
-	if (e.target.tagName === 'IMG' || e.target.tagName === 'P') {
+	if (e.target.tagName === 'IMG') {
 		element = e.target.parentNode;
 	}
+	
+	if (e.target.tagName === 'P') {
+		element = e.target.parentNode.parentNode;
+	}
+	
+	element.childNodes[1].childNodes[1].style.display = "block";
 	
 	const videoId = element.getAttribute('value');
 	const thumbnail = element.getAttribute('thumbnail');

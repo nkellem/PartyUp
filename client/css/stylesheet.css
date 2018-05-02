@@ -31,6 +31,11 @@ html, body {
 	margin-top: 25px;
 }
 
+#error {
+	color: red;
+	margin-bottom: 10px;
+}
+
 #formHeader {
 	margin-top: 75px;
 	margin-bottom: 10px;
@@ -38,6 +43,10 @@ html, body {
 
 form input {
 	font-family: 'Questrial', sans-serif;
+}
+
+input[type="text"] {
+	border: none;
 }
 
 #login label, #login input {
@@ -51,10 +60,17 @@ form input {
   padding-top: 20px;
 }
 
+#upgradeAccountNav img {
+	cursor: pointer;
+}
+
 #title {
-	margin-top: 10px;
-	margin-bottom: 25px;
 	font-family: 'Carrois Gothic SC', sans-serif;
+}
+
+#roomName, #password {
+	margin-bottom: 25px;
+	height: 30px;
 }
 
 #search {
@@ -112,6 +128,13 @@ nav {
 
 .songResultTitle p{
 	margin-left: 25px;
+}
+
+.confirmAdded {
+	display: none;
+	color: darkgreen;
+	font-weight: bold;
+	margin-top: 5px;
 }
 
 #ytTitle {
@@ -194,6 +217,11 @@ nav {
 	margin-top: 20px;
 }
 
+#songName {
+	width: 200px;
+	height: 30px;
+}
+
 #videoSearch {
 	margin-top: 5px;
 }
@@ -210,6 +238,10 @@ nav {
 	margin-top: 15px;
 }
 
+#partyUp {
+	margin-bottom: 25px;
+}
+
 #partyup button {
 	margin-top: 10px;
 }
@@ -224,4 +256,12 @@ nav {
   background-color: white;
 	overflow: auto;
 	background-image: url("/assets/images/trianglify.png");
+}
+
+#upgradeAccountContent {
+	margin-top: 100px;
+}
+
+#upgradeAccountContent p {
+	margin-top: 25px;
 }

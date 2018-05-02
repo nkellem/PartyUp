@@ -3,7 +3,8 @@ let player;
 
 //once the host is confirmed, add to users object
 const hostConfirmation = data => {
-	alert(`you are the host`);
+	isHost = true;
+	createPartyUpPage();
 };
 
 //host method for sending the updated queue to each client
@@ -14,21 +15,28 @@ const sendQueueToClients = () => {
 //host method for sending the current song's image
 const sendCurrentlyPlaying = () => {
 	const currPlayImg = queue[0].currPlayImg;
-	console.log(currPlayImg);
 	const currPlayTitle = document.querySelector('#ytTitle').innerText;
 
-	console.log('curr play update sent');
-
 	socket.emit('sendCurrentlyPlaying', { currPlayImg, currPlayTitle });
+};
+
+//host method for checking if the user entered the correct password
+const onCheckPassword = sock => {
+	const socket = sock;
+
+	socket.on('checkPassword', data => {
+		if (data.userPass === password) {
+			socket.emit('passwordMatches', { socketId: data.socketId });
+		} else {
+			socket.emit('disconnectUser', { socketId: data.socketId });
+		}
+	});
 };
 
 //host method for receiving queue song request from another user
 const onClientSentVideoId = sock => {
 	const socket = sock;
-	console.log('client sent video set up');
 	socket.on('clientSentVideoId', data => {
-		console.log('fired');
-		console.log(data.videoId);
 		addVideoToQueue(data.videoId, data.thumbnail, data.title, data.currPlayImg);
 	});
 };
@@ -38,7 +46,6 @@ const onClientHitNext = sock => {
 	const socket = sock;
 
 	socket.on('clientHitNext', () => {
-		console.log('client hit next');
 		handleNextClick();
 	});
 };
@@ -48,7 +55,6 @@ const onClientHitRestart = sock => {
 	const socket = sock;
 
 	socket.on('clientHitRestart', () => {
-		console.log('client hit restart');
 		handleRestartClick();
 	});
 };
@@ -58,25 +64,25 @@ const onUserJoined = sock => {
 	const socket = sock;
 
 	socket.on('userJoined', data => {
-		console.log('user joined');
-		socket.emit('sendUserQueue', { socketId: data.socketId, queue, currPlayImg: queue[0].currPlayImg, title: queue[0].title });
+		if (queue.length > 0) {
+			socket.emit('sendUserQueue', { socketId: data.socketId, queue, currPlayImg: queue[0].currPlayImg, title: queue[0].title });
+		}
 	});
 };
 
 //sets up all of the host's socket events
 const hostEvents = sock => {
 	const socket = sock;
-	console.log('Host events set up');
 	onClientSentVideoId(socket);
 	onClientHitNext(socket);
 	onClientHitRestart(socket);
 	onUserJoined(socket);
+	onCheckPassword(socket);
 };
 
 //adds a selected video to the queue
 const addVideoToQueue = (videoId, thumbnail, title, currPlayImg) => {
 	queue.push({ videoId, thumbnail, title, currPlayImg });
-	console.dir(queue);
 
 	sendQueueToClients();
 	createQueueImages();
@@ -97,7 +103,6 @@ const playNextSongInQueue = () => {
 //handles what do when the video being played ends
 const onVideoEnd = e => {
 	if (e.data === 0 && queue.length > 1) {
-		console.log('event fired');
 		createVideoPlaceholder(playNextSongInQueue);
 	}
 };
@@ -133,7 +138,6 @@ const loadYoutubeVideo = videoId => {
 const playYouTubeVideo = () => {
 	const videoId = queue[0].videoId;
 	createSongTitle(queue[0].title);
-	console.log(`Video Id: ${videoId}`);
 	loadYoutubeVideo(videoId);
 };
 //SECTION - Components that build the web page
@@ -158,16 +162,23 @@ const RoomLoginComponent = props => {
 			{ id: "formHeader" },
 			"Create a room or enter an existing one"
 		),
+		React.createElement("div", { id: "toast" }),
 		React.createElement(
 			"form",
 			{ id: "roomLogin", name: "roomLogin", action: "/", onSubmit: joinRoom, method: "POST" },
 			React.createElement(
 				"label",
 				{ htmlFor: "roomName" },
-				"Room Name"
+				"*Room Name: "
 			),
 			React.createElement("input", { id: "roomName", type: "text", name: "roomName", placeholder: "Room Name" }),
-			React.createElement("input", { className: "submitForm", type: "submit", value: "Sign In" })
+			React.createElement(
+				"label",
+				{ htmlFor: "password" },
+				"Room Password: "
+			),
+			React.createElement("input", { id: "password", type: "text", name: "password", placeholder: "Room Password" }),
+			React.createElement("input", { className: "submitForm button", type: "submit", value: "Enter" })
 		)
 	);
 };
@@ -187,6 +198,15 @@ const setup = () => {
 };
 //SECTION - Components that build the web page
 
+//React component for rendering error messages
+const ToastMessageComponent = props => {
+	return React.createElement(
+		"h2",
+		{ id: "error" },
+		props.message
+	);
+};
+
 //React comonent for building the upgrade account nav
 const UpgradeAccountNavComponent = props => {
 	return React.createElement(
@@ -202,6 +222,15 @@ const PageTitleComponent = props => {
 		"h1",
 		{ id: "title" },
 		"Party Up"
+	);
+};
+
+//React comonent for rendering the room name
+const QueueRoomNameComponent = props => {
+	return React.createElement(
+		"h3",
+		{ id: "roomName" },
+		`Room name: ${room}`
 	);
 };
 
@@ -227,7 +256,7 @@ const VideoPlaceholderComponent = props => {
 		React.createElement(
 			"p",
 			null,
-			"Click me to add a song!"
+			"Click the button below to add a song!"
 		)
 	);
 };
@@ -264,7 +293,7 @@ const QueueComponent = props => {
 		React.createElement(
 			"p",
 			null,
-			"Queue goes here"
+			"Your room's queue is displayed here"
 		)
 	);
 };
@@ -305,6 +334,7 @@ const PartyUpComponent = props => {
 		{ id: "partyup" },
 		React.createElement(UpgradeAccountNavComponent, null),
 		React.createElement(PageTitleComponent, null),
+		React.createElement(QueueRoomNameComponent, null),
 		React.createElement(CurrentlyPlayingComponent, null),
 		React.createElement(QueueComponent, null),
 		React.createElement(SearchButtonComponent, null)
@@ -312,6 +342,11 @@ const PartyUpComponent = props => {
 };
 
 //SECTION - Methods for calling the components and rendering the page
+
+//renders the toast message
+const createToastMessage = message => {
+	ReactDOM.render(React.createElement(ToastMessageComponent, { message: message }), document.querySelector('#toast'));
+};
 
 //renders the app page
 const createPartyUpPage = () => {
@@ -321,7 +356,6 @@ const createPartyUpPage = () => {
 //renders the placeholder for the videos section
 //done so that iFrames can be reloaded on new videos
 const createVideoPlaceholder = callback => {
-	console.log("placeholder fired");
 	document.querySelector('#ytVideoArea').innerHTML = '<span id="ytVideo"></span>';
 	ReactDOM.render(React.createElement(VideoPlaceholderComponent, null), document.querySelector('#ytVideoArea'), callback);
 };
@@ -361,7 +395,6 @@ const handleRestartClick = e => {
 		}
 	} else {
 		socket.emit('clientHitRestart');
-		console.log('hit restart');
 	}
 };
 
@@ -371,8 +404,8 @@ const updateClientCurrPlay = (songTitle, image) => {
 	createCurrentlyPlayingImage(image, songTitle);
 };
 //attributes for each individual user
-let user = '';
 let room = '';
+let password = '';
 let isHost = false;
 let socket;
 
@@ -381,33 +414,44 @@ const joinRoom = e => {
 	e.preventDefault();
 
 	room = document.querySelector('#roomName').value;
+	password = document.querySelector('#password').value;
 
 	if (room === '') {
-		alert('All fields required');
+		handleError('Room name is required');
 		return false;
 	}
 
 	socket = io.connect();
 
+	const data = {
+		room
+	};
+
+	if (password !== '') {
+		data.password = password;
+	}
+
+	//sends initial join event on socket connect
 	socket.on('connect', () => {
-		socket.emit('join', { room });
-		alert('joined room');
+		socket.emit('join', data);
+	});
+
+	//informs the user if they don't have the right password
+	socket.on('wrongPassword', data => {
+		handleError(data.message);
+	});
+
+	//when the user joins, render the page
+	socket.on('userJoined', () => {
 		createPartyUpPage();
 	});
 
 	//only fires if this socket is the host
 	//initializes all of the host's websocket events
 	socket.on('hostConfirmation', data => {
-		isHost = true;
-		console.log(isHost);
 		hostConfirmation(data);
 		//set up all our host methods
 		hostEvents(socket);
-	});
-
-	//lets the user know who the host is
-	socket.on('hostAcknowledge', data => {
-		console.log('hi');
 	});
 
 	//renders the queue when the host sends
@@ -423,7 +467,6 @@ const joinRoom = e => {
 
 	//updates the client's page with the currently playing info
 	socket.on('sendCurrentlyPlaying', data => {
-		console.log('update received');
 		updateClientCurrPlay(data.currPlayTitle, data.currPlayImg);
 	});
 };
@@ -431,8 +474,39 @@ const joinRoom = e => {
 //Render the intial page
 setup();
 //SECTION - Components that build the web page
+//React component for rendering the Upgrade Account blurb
+const UpgradeAccountContentComponent = props => {
+	return React.createElement(
+		'div',
+		{ id: 'upgradeAccountContent' },
+		React.createElement(
+			'h1',
+			null,
+			'Upgrade Account'
+		),
+		React.createElement(
+			'p',
+			null,
+			'For a fee of $1 a month, you can password protect your group queues!'
+		)
+	);
+};
+
+//React component for rendering the entire page
+const UpgradeAccountPageComponent = props => {
+	return React.createElement(
+		'div',
+		null,
+		React.createElement(SearchVideoNavComponent, null),
+		React.createElement(UpgradeAccountContentComponent, null)
+	);
+};
 
 //SECTION - Methods for calling the components and rendering the page
+//Render the Upgrade Account page
+const createUpgradeAccountPage = () => {
+	ReactDOM.render(React.createElement(UpgradeAccountPageComponent, null), document.querySelector('#paidAccount'));
+};
 
 //SECTION - Events and other App logic
 //when the upgrade account button is clicked, render the summary of a paid service
@@ -440,6 +514,7 @@ const handleUpgradeAccount = e => {
 	e.preventDefault();
 
 	document.querySelector('#paidAccount').style.display = 'block';
+	createUpgradeAccountPage();
 };
 //SECTION - Components that build the web page
 
@@ -465,7 +540,7 @@ const SearchVideoFormComponent = props => {
 					"Song Name: "
 				),
 				React.createElement("input", { name: "songName", id: "songName", type: "text", placeholder: "Enter a song name here" }),
-				React.createElement("input", { id: "submitVideoSearch", type: "submit", value: "Search" })
+				React.createElement("input", { className: "button", id: "submitVideoSearch", type: "submit", value: "Search" })
 			)
 		),
 		React.createElement("div", { id: "searchResults" })
@@ -498,6 +573,11 @@ const ResultsListItemComponent = props => {
 				"p",
 				null,
 				props.video.snippet.title
+			),
+			React.createElement(
+				"p",
+				{ className: "confirmAdded" },
+				"Added!"
 			)
 		)
 	);
@@ -505,6 +585,12 @@ const ResultsListItemComponent = props => {
 
 //React component for building the results list
 const ResultsListComponent = props => {
+
+	const added = document.querySelectorAll('.confirmAdded');
+	added.forEach(msg => {
+		msg.style.display = 'none';
+	});
+
 	let videos = [];
 
 	Object.keys(props.videos).forEach(video => {
@@ -557,8 +643,6 @@ const handleNavHomeClick = e => {
 
 //handles the JSON response from the YouTube API
 const processResults = data => {
-	console.dir(data.items);
-
 	ReactDOM.render(React.createElement(ResultsListComponent, { videos: data.items }), document.querySelector('#searchResults'));
 };
 
@@ -578,8 +662,6 @@ const handleSongSearch = e => {
 
 //method for adding a song to the queue
 const addSongToQueue = (videoId, thumbnail, title, currPlayImg) => {
-	console.log(videoId);
-
 	if (!isHost) {
 		socket.emit('clientSendVideoId', { videoId, thumbnail, title, currPlayImg });
 	} else {
@@ -591,9 +673,15 @@ const addSongToQueue = (videoId, thumbnail, title, currPlayImg) => {
 const addSongFromSearch = e => {
 	let element = e.target;
 
-	if (e.target.tagName === 'IMG' || e.target.tagName === 'P') {
+	if (e.target.tagName === 'IMG') {
 		element = e.target.parentNode;
 	}
+
+	if (e.target.tagName === 'P') {
+		element = e.target.parentNode.parentNode;
+	}
+
+	element.childNodes[1].childNodes[1].style.display = "block";
 
 	const videoId = element.getAttribute('value');
 	const thumbnail = element.getAttribute('thumbnail');
@@ -632,4 +720,9 @@ const buildYouTubeAPIRequest = (search, success) => {
   const action = `${BASE_URL}${searchQuery}${API_KEY}`;
 
   sendAjax('GET', action, null, success);
+};
+
+//helper method for rendering toast messages on errors
+const handleError = message => {
+  createToastMessage(message);
 };
