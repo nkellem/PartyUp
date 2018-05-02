@@ -22,7 +22,7 @@ const SearchVideoFormComponent = props => {
 const SearchVideoNavComponent = props => {
 	return (
 		<nav>
-			<a href="#" onClick={handleNavHomeClick}>Home</a>
+			<a className="button" href="#" onClick={handleNavHomeClick}>Home</a>
 		</nav>
 	);
 };
@@ -31,8 +31,10 @@ const SearchVideoNavComponent = props => {
 const ResultsListItemComponent = props => {
 	return (
 		<li className="resultName" value={props.video.id.videoId} thumbnail={props.video.snippet.thumbnails.default.url} vidTitle={props.video.snippet.title} currPlayImg={props.video.snippet.thumbnails.high.url} onClick={addSongFromSearch}>
-			<img src={props.video.snippet.thumbnails.default.url} alt={props.video.snippet.title} />
-			<p>{props.video.snippet.title}</p>
+			<img src={props.video.snippet.thumbnails.medium.url} alt={props.video.snippet.title} />
+			<div className="songResultTitle">
+				<p>{props.video.snippet.title}</p>
+			</div>
 		</li>
 	);
 };
@@ -83,6 +85,7 @@ const handleNavHomeClick = e => {
 	e.preventDefault();
 	
 	document.querySelector('#search').style.display = 'none';
+	document.querySelector('#paidAccount').style.display = 'none';
 };
 
 //handles the JSON response from the YouTube API

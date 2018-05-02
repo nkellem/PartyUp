@@ -142,16 +142,21 @@ const playYouTubeVideo = () => {
 const RoomLoginComponent = props => {
 	return React.createElement(
 		"div",
-		null,
+		{ id: "login" },
 		React.createElement(
 			"h1",
-			null,
+			{ className: "title" },
 			"Party Up"
 		),
 		React.createElement(
 			"h2",
-			null,
-			"Create a room or enter an existing one!"
+			{ id: "description" },
+			"Create dynamic playlists with you and your friends!"
+		),
+		React.createElement(
+			"h2",
+			{ id: "formHeader" },
+			"Create a room or enter an existing one"
 		),
 		React.createElement(
 			"form",
@@ -181,6 +186,15 @@ const setup = () => {
 	createRoomLogin();
 };
 //SECTION - Components that build the web page
+
+//React comonent for building the upgrade account nav
+const UpgradeAccountNavComponent = props => {
+	return React.createElement(
+		"div",
+		{ id: "upgradeAccountNav" },
+		React.createElement("img", { src: "/assets/images/money-32.png", alt: "Upgrade Account", onClick: handleUpgradeAccount })
+	);
+};
 
 //React component for building the page title
 const PageTitleComponent = props => {
@@ -231,21 +245,13 @@ const CurrentlyPlayingComponent = props => {
 		React.createElement(
 			"div",
 			{ id: "controls" },
-			React.createElement(
-				"span",
-				{ className: "control", id: "restart", onClick: handleRestartClick },
-				"Restart"
-			),
+			React.createElement("img", { src: "/assets/images/recurring-appointment-48.png", alt: "restart", className: "control", id: "restart", onClick: handleRestartClick }),
 			React.createElement(
 				"span",
 				{ id: "ytVideoArea" },
 				React.createElement(VideoPlaceholderComponent, null)
 			),
-			React.createElement(
-				"span",
-				{ className: "control", id: "next", onClick: handleNextClick },
-				"Next"
-			)
+			React.createElement("img", { src: "/assets/images/arrow-30-48.png", alt: "next", className: "control", id: "next", onClick: handleNextClick })
 		)
 	);
 };
@@ -286,8 +292,8 @@ const QueueImagesComponent = props => {
 //React component for building the search button
 const SearchButtonComponent = props => {
 	return React.createElement(
-		"button",
-		{ onClick: createSearchVideoPage },
+		"a",
+		{ className: "button", onClick: createSearchVideoPage, href: "#" },
 		"Search For A Song"
 	);
 };
@@ -297,6 +303,7 @@ const PartyUpComponent = props => {
 	return React.createElement(
 		"div",
 		{ id: "partyup" },
+		React.createElement(UpgradeAccountNavComponent, null),
 		React.createElement(PageTitleComponent, null),
 		React.createElement(CurrentlyPlayingComponent, null),
 		React.createElement(QueueComponent, null),
@@ -348,8 +355,10 @@ const handleNextClick = e => {
 
 //when the restart button is clicked, restart the song
 const handleRestartClick = e => {
-	if (player && isHost) {
-		player.seekTo(0);
+	if (isHost) {
+		if (player) {
+			player.seekTo(0);
+		}
 	} else {
 		socket.emit('clientHitRestart');
 		console.log('hit restart');
@@ -423,6 +432,17 @@ const joinRoom = e => {
 setup();
 //SECTION - Components that build the web page
 
+//SECTION - Methods for calling the components and rendering the page
+
+//SECTION - Events and other App logic
+//when the upgrade account button is clicked, render the summary of a paid service
+const handleUpgradeAccount = e => {
+	e.preventDefault();
+
+	document.querySelector('#paidAccount').style.display = 'block';
+};
+//SECTION - Components that build the web page
+
 //React component for building the search video form
 const SearchVideoFormComponent = props => {
 	return React.createElement(
@@ -459,7 +479,7 @@ const SearchVideoNavComponent = props => {
 		null,
 		React.createElement(
 			"a",
-			{ href: "#", onClick: handleNavHomeClick },
+			{ className: "button", href: "#", onClick: handleNavHomeClick },
 			"Home"
 		)
 	);
@@ -470,11 +490,15 @@ const ResultsListItemComponent = props => {
 	return React.createElement(
 		"li",
 		{ className: "resultName", value: props.video.id.videoId, thumbnail: props.video.snippet.thumbnails.default.url, vidTitle: props.video.snippet.title, currPlayImg: props.video.snippet.thumbnails.high.url, onClick: addSongFromSearch },
-		React.createElement("img", { src: props.video.snippet.thumbnails.default.url, alt: props.video.snippet.title }),
+		React.createElement("img", { src: props.video.snippet.thumbnails.medium.url, alt: props.video.snippet.title }),
 		React.createElement(
-			"p",
-			null,
-			props.video.snippet.title
+			"div",
+			{ className: "songResultTitle" },
+			React.createElement(
+				"p",
+				null,
+				props.video.snippet.title
+			)
 		)
 	);
 };
@@ -528,6 +552,7 @@ const handleNavHomeClick = e => {
 	e.preventDefault();
 
 	document.querySelector('#search').style.display = 'none';
+	document.querySelector('#paidAccount').style.display = 'none';
 };
 
 //handles the JSON response from the YouTube API

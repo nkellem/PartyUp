@@ -3,9 +3,10 @@
 //React Component for rendering the login form on the home page
 const RoomLoginComponent = props => {
 	return (
-		<div>
-			<h1>Party Up</h1>
-			<h2>Create a room or enter an existing one!</h2>
+		<div id="login">
+			<h1 className="title">Party Up</h1>
+			<h2 id="description">Create dynamic playlists with you and your friends!</h2>
+			<h2 id="formHeader">Create a room or enter an existing one</h2>
 			<form id="roomLogin" name="roomLogin" action="/" onSubmit={joinRoom} method="POST">
 				<label htmlFor="roomName">Room Name</label>
 				<input id="roomName" type="text" name="roomName" placeholder="Room Name" />

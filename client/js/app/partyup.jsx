@@ -1,5 +1,14 @@
 //SECTION - Components that build the web page
 
+//React comonent for building the upgrade account nav
+const UpgradeAccountNavComponent = props => {
+	return (
+		<div id="upgradeAccountNav">
+			<img src="/assets/images/money-32.png" alt="Upgrade Account" onClick={handleUpgradeAccount} />
+		</div>
+	);
+};
+
 //React component for building the page title
 const PageTitleComponent = props => {
 	return (
@@ -38,11 +47,11 @@ const CurrentlyPlayingComponent = props => {
 				<SongTitleComponent songTitle="Song Title Goes Here" />
 			</div>
 			<div id="controls">
-				<span className="control" id="restart" onClick={handleRestartClick}>Restart</span>
+				<img src="/assets/images/recurring-appointment-48.png" alt="restart" className="control" id="restart" onClick={handleRestartClick} />
 				<span id="ytVideoArea">
 					<VideoPlaceholderComponent />
 				</span>
-				<span className="control" id="next" onClick={handleNextClick}>Next</span>
+				<img src="/assets/images/arrow-30-48.png" alt="next" className="control" id="next" onClick={handleNextClick} />
 			</div>
 		</div>
 	);
@@ -82,7 +91,7 @@ const QueueImagesComponent = props => {
 //React component for building the search button
 const SearchButtonComponent = props => {
 	return (
-		<button onClick={createSearchVideoPage}>Search For A Song</button>
+		<a className="button" onClick={createSearchVideoPage} href="#">Search For A Song</a>
 	);
 };
 
@@ -90,6 +99,7 @@ const SearchButtonComponent = props => {
 const PartyUpComponent = props => {
 	return (
 		<div id="partyup">
+			<UpgradeAccountNavComponent />
 			<PageTitleComponent />
 			<CurrentlyPlayingComponent />
 			<QueueComponent />
@@ -158,8 +168,10 @@ const handleNextClick = e => {
 
 //when the restart button is clicked, restart the song
 const handleRestartClick = e => {
-	if (player && isHost) {
-		player.seekTo(0);
+	if (isHost) {
+		if (player) {
+			player.seekTo(0);
+		}
 	} else {
 		socket.emit('clientHitRestart');
 		console.log('hit restart');
