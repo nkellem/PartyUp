@@ -1,8 +1,25 @@
 let queue = [];
+let player;
 
 //once the host is confirmed, add to users object
 const hostConfirmation = data => {
 	alert(`you are the host`);
+};
+
+//host method for sending the updated queue to each client
+const sendQueueToClients = () => {
+	socket.emit('sendQueueToClients', { queue });
+};
+
+//host method for sending the current song's image
+const sendCurrentlyPlaying = () => {
+	const currPlayImg = queue[0].currPlayImg;
+	console.log(currPlayImg);
+	const currPlayTitle = document.querySelector('#ytTitle').innerText;
+
+	console.log('curr play update sent');
+
+	socket.emit('sendCurrentlyPlaying', { currPlayImg, currPlayTitle });
 };
 
 //host method for receiving queue song request from another user
@@ -12,7 +29,37 @@ const onClientSentVideoId = sock => {
 	socket.on('clientSentVideoId', data => {
 		console.log('fired');
 		console.log(data.videoId);
-		addVideoToQueue(data.videoId, data.thumbnail);
+		addVideoToQueue(data.videoId, data.thumbnail, data.title, data.currPlayImg);
+	});
+};
+
+//host method for receiving client "next" requests
+const onClientHitNext = sock => {
+	const socket = sock;
+
+	socket.on('clientHitNext', () => {
+		console.log('client hit next');
+		handleNextClick();
+	});
+};
+
+//host method for receiving client restart requests
+const onClientHitRestart = sock => {
+	const socket = sock;
+
+	socket.on('clientHitRestart', () => {
+		console.log('client hit restart');
+		handleRestartClick();
+	});
+};
+
+//host method for receiving request from the client to get initial queue info
+const onUserJoined = sock => {
+	const socket = sock;
+
+	socket.on('userJoined', data => {
+		console.log('user joined');
+		socket.emit('sendUserQueue', { socketId: data.socketId, queue, currPlayImg: queue[0].currPlayImg, title: queue[0].title });
 	});
 };
 
@@ -21,58 +68,71 @@ const hostEvents = sock => {
 	const socket = sock;
 	console.log('Host events set up');
 	onClientSentVideoId(socket);
+	onClientHitNext(socket);
+	onClientHitRestart(socket);
+	onUserJoined(socket);
 };
 
-//
-const addVideoToQueue = (videoId, thumbnail) => {
-	queue.push({ videoId, thumbnail });
+//adds a selected video to the queue
+const addVideoToQueue = (videoId, thumbnail, title, currPlayImg) => {
+	queue.push({ videoId, thumbnail, title, currPlayImg });
 	console.dir(queue);
+
+	sendQueueToClients();
+	createQueueImages();
 
 	if (queue.length === 1) {
 		playYouTubeVideo();
 	};
 };
 
+//handles playing the next song in the queue
+const playNextSongInQueue = () => {
+	queue.splice(0, 1);
+	sendQueueToClients();
+	createQueueImages();
+	playYouTubeVideo();
+};
+
 //handles what do when the video being played ends
 const onVideoEnd = e => {
-	if (e.data === 0) {
+	if (e.data === 0 && queue.length > 1) {
 		console.log('event fired');
-		queue.splice(0, 1);
-		playYouTubeVideo();
+		createVideoPlaceholder(playNextSongInQueue);
+	}
+};
+
+//handles playing the video as it is loaded
+const onPlayerReady = (e, player) => {
+	sendCurrentlyPlaying();
+	if (e) {
+		e.target.playVideo();
+	} else {
+		player.playVideo();
 	}
 };
 
 //Loading the YouTube iFrame API
 const loadYoutubeVideo = videoId => {
-	const playArea = document.querySelector('#ytVideo');
-
-	if (playArea.tagName !== 'IFRAME') {
-		const player = new YT.Player('ytVideo', {
-			height: '360',
-			width: '640',
-			videoId,
-			playerVars: {
-				autoplay: 1,
-				rel: 0
-			},
-			events: {
-				onStateChange: onVideoEnd
-			}
-		});
-
-		return false;
-	}
-
-	playArea.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
-
-	playArea.addEventListener('onStateChange', e => {
-		onVideoEnd(e);
+	player = new YT.Player('ytVideo', {
+		height: '360',
+		width: '640',
+		videoId,
+		playerVars: {
+			autoplay: 1,
+			rel: 0
+		},
+		events: {
+			onStateChange: onVideoEnd,
+			onReady: onPlayerReady
+		}
 	});
 };
 
-//
+//Plays the youtube video on the host's client
 const playYouTubeVideo = () => {
-	const videoId = queue[0];
+	const videoId = queue[0].videoId;
+	createSongTitle(queue[0].title);
 	console.log(`Video Id: ${videoId}`);
 	loadYoutubeVideo(videoId);
 };
@@ -102,12 +162,6 @@ const RoomLoginComponent = props => {
 				"Room Name"
 			),
 			React.createElement("input", { id: "roomName", type: "text", name: "roomName", placeholder: "Room Name" }),
-			React.createElement(
-				"label",
-				{ htmlFor: "username" },
-				"Username"
-			),
-			React.createElement("input", { id: "username", type: "text", name: "username", placeholder: "Username" }),
 			React.createElement("input", { className: "submitForm", type: "submit", value: "Sign In" })
 		)
 	);
@@ -137,6 +191,33 @@ const PageTitleComponent = props => {
 	);
 };
 
+//React component for creating the song title
+const SongTitleComponent = props => {
+	return React.createElement(
+		"h3",
+		null,
+		props.songTitle
+	);
+};
+
+//React component for displaying an image of the currently playing song
+const CurrPlayImageComponent = props => {
+	return React.createElement("img", { id: "currPlayImage", src: props.image, alt: props.imageTitle });
+};
+
+//React component for rendering the placeholder for videos
+const VideoPlaceholderComponent = props => {
+	return React.createElement(
+		"span",
+		{ id: "ytVideo" },
+		React.createElement(
+			"p",
+			null,
+			"Click me to add a song!"
+		)
+	);
+};
+
 //React component for building the playing section
 const CurrentlyPlayingComponent = props => {
 	return React.createElement(
@@ -145,32 +226,24 @@ const CurrentlyPlayingComponent = props => {
 		React.createElement(
 			"div",
 			{ id: "ytTitle" },
-			React.createElement(
-				"h3",
-				null,
-				"Song Title Goes Here"
-			)
+			React.createElement(SongTitleComponent, { songTitle: "Song Title Goes Here" })
 		),
 		React.createElement(
 			"div",
 			{ id: "controls" },
 			React.createElement(
 				"span",
-				{ className: "control", id: "previous" },
-				"Prev"
+				{ className: "control", id: "restart", onClick: handleRestartClick },
+				"Restart"
 			),
 			React.createElement(
 				"span",
-				{ id: "ytVideo" },
-				React.createElement(
-					"p",
-					null,
-					"Click me to add a song!"
-				)
+				{ id: "ytVideoArea" },
+				React.createElement(VideoPlaceholderComponent, null)
 			),
 			React.createElement(
 				"span",
-				{ className: "control", id: "next" },
+				{ className: "control", id: "next", onClick: handleNextClick },
 				"Next"
 			)
 		)
@@ -187,6 +260,26 @@ const QueueComponent = props => {
 			null,
 			"Queue goes here"
 		)
+	);
+};
+
+//React component for displaying a single queue image
+const QueueImageComponent = props => {
+	return React.createElement("img", { className: "queueImg", src: props.thumbnail, alt: props.vidTitle, title: props.vidTitle });
+};
+
+//React component for displaying the entire image queue
+const QueueImagesComponent = props => {
+	let items = [];
+
+	queue.forEach(video => {
+		items.push(React.createElement(QueueImageComponent, { thumbnail: video.thumbnail, vidTitle: video.title, currPlayImg: video.currPlayImg }));
+	});
+
+	return React.createElement(
+		"div",
+		{ id: "queueImages" },
+		items
 	);
 };
 
@@ -218,22 +311,69 @@ const createPartyUpPage = () => {
 	ReactDOM.render(React.createElement(PartyUpComponent, null), document.querySelector('#mainContent'));
 };
 
+//renders the placeholder for the videos section
+//done so that iFrames can be reloaded on new videos
+const createVideoPlaceholder = callback => {
+	console.log("placeholder fired");
+	document.querySelector('#ytVideoArea').innerHTML = '<span id="ytVideo"></span>';
+	ReactDOM.render(React.createElement(VideoPlaceholderComponent, null), document.querySelector('#ytVideoArea'), callback);
+};
+
+//renders the queue
+const createQueueImages = () => {
+	ReactDOM.render(React.createElement(QueueImagesComponent, null), document.querySelector('#queue'));
+};
+
+//renders the song title of the page
+const createSongTitle = songTitle => {
+	ReactDOM.render(React.createElement(SongTitleComponent, { songTitle: songTitle }), document.querySelector('#ytTitle'));
+};
+
+//renders the currently playing image for the client page
+const createCurrentlyPlayingImage = (image, imageTitle) => {
+	ReactDOM.render(React.createElement(CurrPlayImageComponent, { image: image, imageTitle: imageTitle }), document.querySelector('#ytVideo'));
+};
+
 //SECTION - Events and other App logic
+//when the next button is clicked, play the next song in the queue
+const handleNextClick = e => {
+	if (queue.length > 1) {
+		if (!isHost) {
+			socket.emit('clientHitNext');
+		} else {
+			createVideoPlaceholder(playNextSongInQueue);
+		}
+	}
+};
+
+//when the restart button is clicked, restart the song
+const handleRestartClick = e => {
+	if (player && isHost) {
+		player.seekTo(0);
+	} else {
+		socket.emit('clientHitRestart');
+		console.log('hit restart');
+	}
+};
+
+//updates the client's currently playing section
+const updateClientCurrPlay = (songTitle, image) => {
+	createSongTitle(songTitle);
+	createCurrentlyPlayingImage(image, songTitle);
+};
 //attributes for each individual user
 let user = '';
 let room = '';
 let isHost = false;
-let hostName = '';
 let socket;
 
 //sets up all of the client websocket events
 const joinRoom = e => {
 	e.preventDefault();
 
-	user = document.querySelector('#username').value;
 	room = document.querySelector('#roomName').value;
 
-	if (user === '' || room === '') {
+	if (room === '') {
 		alert('All fields required');
 		return false;
 	}
@@ -241,7 +381,7 @@ const joinRoom = e => {
 	socket = io.connect();
 
 	socket.on('connect', () => {
-		socket.emit('join', { user, room });
+		socket.emit('join', { room });
 		alert('joined room');
 		createPartyUpPage();
 	});
@@ -256,9 +396,26 @@ const joinRoom = e => {
 		hostEvents(socket);
 	});
 
+	//lets the user know who the host is
 	socket.on('hostAcknowledge', data => {
 		console.log('hi');
-		alert(`${data.hostName} is the host`);
+	});
+
+	//renders the queue when the host sends
+	socket.on('hostSentQueue', data => {
+		queue = data.queue;
+		createQueueImages();
+
+		if (data.joined) {
+			createSongTitle(data.title);
+			createCurrentlyPlayingImage(data.currPlayImg, data.title);
+		}
+	});
+
+	//updates the client's page with the currently playing info
+	socket.on('sendCurrentlyPlaying', data => {
+		console.log('update received');
+		updateClientCurrPlay(data.currPlayTitle, data.currPlayImg);
 	});
 };
 
@@ -291,26 +448,6 @@ const SearchVideoFormComponent = props => {
 				React.createElement("input", { id: "submitVideoSearch", type: "submit", value: "Search" })
 			)
 		),
-		React.createElement(
-			"span",
-			{ className: "addVideo" },
-			React.createElement(
-				"h2",
-				null,
-				"Add a Song by Link"
-			),
-			React.createElement(
-				"form",
-				{ id: "videoAdd", name: "videoAdd" },
-				React.createElement(
-					"label",
-					{ htmlFor: "songLink" },
-					"Song Link: "
-				),
-				React.createElement("input", { name: "songLink", id: "songLink", type: "text", placeholder: "Enter a YouTube link" }),
-				React.createElement("input", { id: "submitVideoAdd", type: "submit", value: "Add" })
-			)
-		),
 		React.createElement("div", { id: "searchResults" })
 	);
 };
@@ -332,7 +469,7 @@ const SearchVideoNavComponent = props => {
 const ResultsListItemComponent = props => {
 	return React.createElement(
 		"li",
-		{ className: "resultName", value: props.video.id.videoId, thumbnail: props.video.snippet.thumbnails.default.url, onClick: addSongFromSearch },
+		{ className: "resultName", value: props.video.id.videoId, thumbnail: props.video.snippet.thumbnails.default.url, vidTitle: props.video.snippet.title, currPlayImg: props.video.snippet.thumbnails.high.url, onClick: addSongFromSearch },
 		React.createElement("img", { src: props.video.snippet.thumbnails.default.url, alt: props.video.snippet.title }),
 		React.createElement(
 			"p",
@@ -415,13 +552,13 @@ const handleSongSearch = e => {
 };
 
 //method for adding a song to the queue
-const addSongToQueue = (videoId, thumbnail) => {
+const addSongToQueue = (videoId, thumbnail, title, currPlayImg) => {
 	console.log(videoId);
 
 	if (!isHost) {
-		socket.emit('clientSendVideoId', { videoId, thumbnail });
+		socket.emit('clientSendVideoId', { videoId, thumbnail, title, currPlayImg });
 	} else {
-		addVideoToQueue(videoId, thumbnail);
+		addVideoToQueue(videoId, thumbnail, title, currPlayImg);
 	}
 };
 
@@ -435,8 +572,10 @@ const addSongFromSearch = e => {
 
 	const videoId = element.getAttribute('value');
 	const thumbnail = element.getAttribute('thumbnail');
+	const title = element.getAttribute('vidTitle');
+	const currPlayImg = element.getAttribute('currPlayImg');
 
-	addSongToQueue(videoId, thumbnail);
+	addSongToQueue(videoId, thumbnail, title, currPlayImg);
 };
 //Holds all our YouTube API related information
 const API_KEY = '&key=AIzaSyB3Js93Zd4qIyvA-CY0ZBaRgt4ZQifUDMQ';

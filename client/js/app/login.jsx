@@ -9,8 +9,6 @@ const RoomLoginComponent = props => {
 			<form id="roomLogin" name="roomLogin" action="/" onSubmit={joinRoom} method="POST">
 				<label htmlFor="roomName">Room Name</label>
 				<input id="roomName" type="text" name="roomName" placeholder="Room Name" />
-				<label htmlFor="username">Username</label>
-				<input id="username" type="text" name="username" placeholder="Username" />
 				<input className="submitForm" type="submit" value="Sign In" />
 			</form>
 		</div>

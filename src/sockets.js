@@ -8,10 +8,7 @@ const confirmHost = (sock) => {
   socket.isHost = true;
   socket.hostSocket = socket;
 
-  socket.emit('hostConfirmation', { hostName: socket.name });
-
-  // handle host events
-  console.log(`The host is user ${socket.name}`);
+  socket.emit('hostConfirmation');
 };
 
 // Set up socketio events
@@ -32,15 +29,14 @@ const designateHost = (sock) => {
       // grab the socket object from the overall socket list
       // based on the socket ids in the room
       const socketUser = io.sockets.connected[socketKeys[i]];
-      console.log(socketUser.name);
 
       // if this socket is the host and matches our room name
       if (socketUser.isHost) {
         // set the host socket reference as this socket's hostSocket (custom property)
         socket.hostSocket = socketUser;
-        socket.emit('hostAcknowledge', { hostName: socket.hostSocket.name });
-        console.log(`Host for ${socket.belongsTo} is ${socket.hostSocket.name}`);
+        socket.emit('hostAcknowledge');
         hostFound = true; // flag we did find a host (in case host left)
+        socket.hostSocket.emit('userJoined', { socketId: socket.id });
         break; // stop searching for a host
       }
     }
@@ -57,9 +53,7 @@ const onJoined = (sock) => {
 
   socket.on('join', (data) => {
     socket.join(data.room);
-    socket.name = data.user;
     socket.belongsTo = data.room;
-    console.log(`User ${data.user} just joined the ${data.room}`);
     designateHost(socket);
   });
 };
@@ -74,6 +68,61 @@ const onClientSendVideoId = (sock) => {
   });
 };
 
+// handle incoming queue data from the host and route it to clients
+const onSendQueueToClients = (sock) => {
+  const socket = sock;
+
+  socket.on('sendQueueToClients', (data) => {
+    console.log('queue received and sent');
+    socket.hostSocket.broadcast.emit('hostSentQueue', data);
+  });
+};
+
+// handle incoming next requests from the client
+const onClientHitNext = (sock) => {
+  const socket = sock;
+
+  socket.on('clientHitNext', () => {
+    socket.hostSocket.emit('clientHitNext');
+  });
+};
+
+// handle incoming restart requests from the client
+const onClientHitRestart = (sock) => {
+  const socket = sock;
+
+  socket.on('clientHitRestart', () => {
+    console.log('client hit restart');
+    socket.hostSocket.emit('clientHitRestart');
+  });
+};
+
+// handle incoming host request to update the client
+const onSendCurrentlyPlaying = (sock) => {
+  const socket = sock;
+
+  socket.on('sendCurrentlyPlaying', (data) => {
+    console.log('currently playing updated');
+    socket.hostSocket.broadcast.emit('sendCurrentlyPlaying', data);
+  });
+};
+
+// handle incoming host request to send the client the current queue
+const onSendUserQueue = (sock) => {
+  const socket = sock;
+
+  socket.on('sendUserQueue', (data) => {
+    console.log('send user queue');
+    const dataToSend = {
+      queue: data.queue,
+      joined: true,
+      title: data.title,
+      currPlayImg: data.currPlayImg,
+    };
+    socket.hostSocket.to(data.socketId).emit('hostSentQueue', dataToSend);
+  });
+};
+
 // set up the socket events
 const setupSockets = (ioServer) => {
   io = ioServer;
@@ -83,6 +132,11 @@ const setupSockets = (ioServer) => {
 
     onJoined(socket);
     onClientSendVideoId(socket);
+    onSendQueueToClients(socket);
+    onClientHitNext(socket);
+    onClientHitRestart(socket);
+    onSendCurrentlyPlaying(socket);
+    onSendUserQueue(socket);
   });
 };
 

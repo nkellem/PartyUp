@@ -12,14 +12,6 @@ const SearchVideoFormComponent = props => {
 					<input id="submitVideoSearch" type="submit" value="Search" />
 				</form>
 			</span>
-			<span className="addVideo">
-				<h2>Add a Song by Link</h2>
-				<form id="videoAdd" name="videoAdd">
-					<label htmlFor="songLink">Song Link: </label>
-					<input name="songLink" id="songLink" type="text" placeholder="Enter a YouTube link" />
-					<input id="submitVideoAdd" type="submit" value="Add" />
-				</form>
-			</span>
 			<div id="searchResults">
 			</div>
 		</div>
@@ -38,7 +30,7 @@ const SearchVideoNavComponent = props => {
 //React componenet for building an result list item
 const ResultsListItemComponent = props => {
 	return (
-		<li className="resultName" value={props.video.id.videoId} thumbnail={props.video.snippet.thumbnails.default.url} onClick={addSongFromSearch}>
+		<li className="resultName" value={props.video.id.videoId} thumbnail={props.video.snippet.thumbnails.default.url} vidTitle={props.video.snippet.title} currPlayImg={props.video.snippet.thumbnails.high.url} onClick={addSongFromSearch}>
 			<img src={props.video.snippet.thumbnails.default.url} alt={props.video.snippet.title} />
 			<p>{props.video.snippet.title}</p>
 		</li>
@@ -118,13 +110,13 @@ const handleSongSearch = e => {
 };
 
 //method for adding a song to the queue
-const addSongToQueue = (videoId, thumbnail) => {
+const addSongToQueue = (videoId, thumbnail, title, currPlayImg) => {
 	console.log(videoId);
 	
 	if (!isHost) {
-		socket.emit('clientSendVideoId', {videoId, thumbnail});
+		socket.emit('clientSendVideoId', {videoId, thumbnail, title, currPlayImg});
 	} else {
-		addVideoToQueue(videoId, thumbnail);
+		addVideoToQueue(videoId, thumbnail, title, currPlayImg);
 	}
 };
 
@@ -138,6 +130,8 @@ const addSongFromSearch = e => {
 	
 	const videoId = element.getAttribute('value');
 	const thumbnail = element.getAttribute('thumbnail');
+	const title = element.getAttribute('vidTitle');
+	const currPlayImg = element.getAttribute('currPlayImg');
 	
-	addSongToQueue(videoId, thumbnail);
+	addSongToQueue(videoId, thumbnail, title, currPlayImg);
 };

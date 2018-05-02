@@ -20,6 +20,11 @@ html, body {
   height: 100%;
   top: 0;
   background-color: white;
+	overflow: auto;
+}
+
+.resultName img, .resultName p {
+	cursor: pointer;
 }
 
 #controls {
@@ -31,6 +36,10 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+#next, #restart {
+	cursor: pointer;
 }
 
 #ytVideo {
@@ -52,10 +61,36 @@ html, body {
 	
 }
 
+#currPlayImage {
+	width: 480px;
+	height: 360px;
+}
+
 #queue {
 	border: 1px solid black;
 	width: 640px;
 	margin: 0 auto;
+	height: 92px;
+	text-align: center;
+	display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+	overflow: hidden;
+}
+
+#queueImages {
+	height: 92px;
+	white-space: nowrap;
+	overflow-y: hidden;
+	overflow-x: auto;
+}
+
+.queueImg {
+	padding: 0 2.5px;
 }
 
 .addVideo {
